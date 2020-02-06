@@ -78,7 +78,7 @@ def temperature():
     #Subtract 12 months to find first date 
     first_date = last_date - dt.timedelta(days=365)
     
-    results= session.query(Measurement.date, Measurement.prcp).filter(Measurement.date > first_date).all()
+    results= session.query(Measurement.date, Measurement.tobs).filter(Measurement.date > first_date).all()
     
     session.close()
     
@@ -91,7 +91,7 @@ def temperature():
 def summ_from(start):
     session = Session(engine)
     
-    results= session.query(Measurement.date, func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).filter(Measurement.date>start).all()
+    results= session.query(Measurement.date, func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).group_by(Measurement.date).filter(Measurement.date>=start).all()
     
     session.close()
 
@@ -99,17 +99,20 @@ def summ_from(start):
     
     return jsonify(summ_temp)
 
-'''
+
 @app.route("/api/v1.0/<start>/<end>")
 def summ_range(start, end):
     session = Session(engine)
     
-    results=session.query(Measurement.date, Measurement.prcp).all()
-    session.close()
+    results= session.query(Measurement.date, func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).group_by(Measurement.date).filter(Measurement.date>=start).filter(Measurement.date<=end).all()
     
-    return jsonify()
+    session.close()
 
-'''
+    summ_temp=list(np.ravel(results))
+    
+    return jsonify(summ_temp)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
